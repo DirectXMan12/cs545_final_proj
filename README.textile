@@ -1,1 +1,8 @@
-h1. Cheese!
+h1. Current Project Status
+
+h2. Utility Libraries
+
+- TDImage (3d_img.*) := Template class representing an image in 3-dimensional space, has cols, rows, colors, and depth
+- TomoImage (tomo_img.*) := Template class representing a series of Tomographical projections, has cols, rows, colors, and positions (planes)
+
+both libraries compile without errors, but I have not gotten a chance to try them out, so let me know if you get any errors -- Solly
