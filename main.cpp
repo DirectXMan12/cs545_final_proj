@@ -3,7 +3,7 @@
  * Rows: 128
  * Cols: 128
  * Clrs: 1
- * Pos': 120
+ * Planes: 120
  * Size: 1966080
  */
 #include <iostream>
@@ -19,33 +19,34 @@ using namespace std;
 void scaleData(long *, long, long, long);
 
 int main(int argc, char* argv[]) {
+  int row = 0;
+
   // Check args
-  if(argc != 2) {
-    cerr << "Usage: tomorec inputDataFile" << endl;
+  if(argc != 3) {
+    cerr << "Usage: tomorec inputDataFile outputSliceFile" << endl;
     return -1;
   }
 
   TomoImage<char> *data = new TomoImage<char>(argv[1]);
-  long C = data->colors, P = data->positions;
+  long C = data->colors, P = data->planes;
   long M = data->cols, N = data->rows;
 
-  for(int clr=0; clr<C; clr++) {
-    for(int pos=0; pos<P; pos++) {
-      for(int row=0; row<N; row++) {
-        for(int col=0; col<M; col++) {
+  TomoImage<char> *slice = new TomoImage<char>(M, N, C, 1, data->image_type);
+  slice->n_dims = 2;
 
-        }
+  for(int clr=0; clr<C; clr++) {
+    for(int pln=0; pln<P; pln++) {
+      for(int col=0; col<M; col++) {
+        slice->image[col + M * (pln +  clr * P)] =
+          data->get_pixel(col, row, clr, pln);
       }
     }
   }
 
-  cout << "Rows: " << data->rows << endl;
-  cout << "Cols: " << data->cols << endl;
-  cout << "Clrs: " << data->colors << endl;
-  cout << "Pos': " << data->positions << endl;
-  cout << "Size: " << data->size << endl;
+  slice->write(argv[2]);
 
   delete data;
+  delete slice;
 
   return 0;
 }
