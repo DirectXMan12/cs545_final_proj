@@ -73,10 +73,10 @@ ComplexImage *resample(ComplexImage *wtSpace) {
         double v = (double)w * sin((double)t * 3.0 * M_PI / 180.0);
 
         // For now, use nearest neighbor
-	int u1 = (int)(u + 0.5);
-	int v1 = (int)(v + 0.5);
+        int u1 = (int)(u + 0.5);
+        int v1 = (int)(v + 0.5);
 
-	uvSpace->set_pixel(u, v, c,
+        uvSpace->set_pixel(u1, v1, c,
           wtSpace->get_pixel(w, t, c));
       }
     }
