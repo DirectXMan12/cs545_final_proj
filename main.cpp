@@ -9,10 +9,16 @@
 #include <iostream>
 #include "3d_img.h"
 #include "tomo_img.h"
+#include "cimg.h"
+#include <math.h>
 
 #include "err_macros.h"
 
 using namespace std;
+
+// Resample an image from (w, t) space to (u, v) space
+// i.e. transform from polar to Cartesian
+ComplexImage *resample(ComplexImage *wtSpace);
 
 // Data currently in range [0, 80]
 // Can use this later to scale to [0, 255]
@@ -49,6 +55,32 @@ int main(int argc, char* argv[]) {
   delete slice;
 
   return 0;
+}
+
+// For now, use the method of grabbing a pixel from (w,t) space
+// and placing it where it belongs in (u, v) space. This way, we
+// don't have to worry about undefined values and out-of-bounds
+// values.
+// Also use nearest neighbor for now.
+ComplexImage *resample(ComplexImage *wtSpace) {
+  long M = wtSpace->cols, N = wtSpace->rows, C = wtSpace->colors;
+  ComplexImage *uvSpace = new ComplexImage(M, N, C);
+
+  for(int c=0; c<C; c++) {
+    for(int t=0; t<N; t++) {
+      for(int w=0; w<M; w++) {
+	double u = (double)w * cos((double)t * 3.0 * M_PI / 180.0);
+        double v = (double)w * sin((double)t * 3.0 * M_PI / 180.0);
+
+        // For now, use nearest neighbor
+	int u1 = (int)(u + 0.5);
+	int v1 = (int)(v + 0.5);
+
+	uvSpace->set_pixel(u, v, c,
+          wtSpace->get_pixel(w, t, c));
+      }
+    }
+  }
 }
 
 /**
