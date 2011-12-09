@@ -16,6 +16,7 @@
 
 using namespace std;
 
+
 // Resample an image from (w, t) space to (u, v) space
 // i.e. transform from polar to Cartesian
 ComplexImage *resample(ComplexImage *wtSpace);
@@ -57,29 +58,30 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+#define FOREACH_PIXEL(img,k,j,i) for (int i = 0; i < img->colors; i++) for (int j = 0; j < img->rows; j++) for(int k = 0; k < img->cols; k++)
+#define FOREACH_PIXEL_IN_COLOR(img,k,j) for (int j = 0; j < img->rows; j++) for (int k = 0; k < img->cols; k++)
+
 // For now, use the method of grabbing a pixel from (w,t) space
 // and placing it where it belongs in (u, v) space. This way, we
 // don't have to worry about undefined values and out-of-bounds
 // values.
 // Also use nearest neighbor for now.
-ComplexImage *resample(ComplexImage *wtSpace) {
-  long M = wtSpace->cols, N = wtSpace->rows, C = wtSpace->colors;
-  ComplexImage *uvSpace = new ComplexImage(M, N, C);
+ComplexImage* resample(ComplexImage *wtSpace) {
+  long cols = wtSpace->cols, rows = wtSpace->rows, colors = wtSpace->colors;
+  ComplexImage *uvSpace = new ComplexImage(cols, rows, colors);
 
-  for(int c=0; c<C; c++) {
-    for(int t=0; t<N; t++) {
-      for(int w=0; w<M; w++) {
-	double u = (double)w * cos((double)t * 3.0 * M_PI / 180.0);
-        double v = (double)w * sin((double)t * 3.0 * M_PI / 180.0);
 
-        // For now, use nearest neighbor
-        int u1 = (int)(u + 0.5);
-        int v1 = (int)(v + 0.5);
+  FOREACH_PIXEL(wtSpace, column, row, color)
+  {
+	  double u = (double)column * cos((double)row * 3.0 * M_PI / 180.0);
+    double v = (double)column * sin((double)row * 3.0 * M_PI / 180.0);
 
-        uvSpace->set_pixel(u1, v1, c,
-          wtSpace->get_pixel(w, t, c));
-      }
-    }
+    // For now, use nearest neighbor
+    int u1 = (int)(u + 0.5);
+    int v1 = (int)(v + 0.5);
+
+    uvSpace->set_pixel(u1, v1, color,
+                                  wtSpace->get_pixel(column, row, color));
   }
 }
 
