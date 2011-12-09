@@ -1,5 +1,4 @@
-#include "cimg_cpp.h"
-#include "img_cpp.h"
+#include "cimg.h"
 #include "img.h"
 #include <iostream>
 #include <ios>
@@ -73,7 +72,7 @@ ComplexImage::ComplexImage(ComplexImage* src_img)
   memcpy(this->image, src_img->image, this->size);
 }
 
-ComplexImage::ComplexImage(Image* in_img)
+ComplexImage::ComplexImage(TomoImage<char>* in_img)
 {
   this->cols = in_img->cols;
   this->rows = in_img->rows;
@@ -83,12 +82,8 @@ ComplexImage::ComplexImage(Image* in_img)
   this->image = new std::complex<float>[this->size];
   FOREACH_PIXEL(this, column, row, color)
   {
-    float res = in_img->get_pixel(column, row, color);
-    res *= res;
-    res /= 2;
-    res = sqrt(res);
-
-    this->set_pixel(column, row, color, std::complex<float>(res, res));
+    float res = in_img->get_pixel(column, row, color, 0);
+    this->set_pixel(column, row, color, std::complex<float>(res, 0));
   }
 }
 
@@ -97,10 +92,10 @@ ComplexImage::~ComplexImage()
   delete[] image;
 }
 
-Image* ComplexImage::to_image()
+TomoImage<char>* ComplexImage::to_tomo_image()
 {
-  Image* out_img = new Image(this->cols, this->rows, this->colors);
-  
+  TomoImage<char>* out_img = new TomoImage<char>(this->cols, this->rows, this->colors, 1, 'c');
+
   float max_val = 0;
   FOREACH_PIXEL(out_img, column, row, color)
   {
@@ -111,7 +106,7 @@ Image* ComplexImage::to_image()
   FOREACH_PIXEL(out_img, column, row, color)
   {
     float p = abs(this->get_pixel(column, row, color));
-    out_img->set_pixel(column, row, color, (unsigned char)((p*255.0f)/max_val));
+    out_img->set_pixel(column, row, color, 0, (unsigned char)((p*255.0f)/max_val));
   }
 
   return out_img;
