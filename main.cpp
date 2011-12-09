@@ -31,14 +31,14 @@ int main(int argc, char* argv[]) {
   long C = data->colors, P = data->planes;
   long M = data->cols, N = data->rows;
 
-  TomoImage<char> *slice = new TomoImage<char>(M, N, C, 1, data->image_type);
+  TomoImage<char> *slice = new TomoImage<char>(M, P, C, 1, data->image_type);
   slice->n_dims = 2;
 
   for(int clr=0; clr<C; clr++) {
     for(int pln=0; pln<P; pln++) {
       for(int col=0; col<M; col++) {
-        slice->image[col + M * (pln +  clr * P)] =
-          data->get_pixel(col, row, clr, pln);
+        slice->set_pixel(col, pln, clr, 0,
+          data->get_pixel(col, row, clr, pln));
       }
     }
   }
