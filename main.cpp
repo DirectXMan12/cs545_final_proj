@@ -79,6 +79,8 @@ int main(int argc, char* argv[])
   CHAIN_OPF(resample(c_img));
   CHAIN_OP(inv_dft_img(c_img));
   
+  out_img->write(out_name.c_str());
+
   // Part 2 -- prepare for output to obj file
   // open = erode then dialate
   TDImage<unsigned char>* pristine_out_img = new TDImage<unsigned char>(out_img);
@@ -89,7 +91,7 @@ int main(int argc, char* argv[])
   delete in_img;
   delete c_img;
 
-  out_img->write(out_name.c_str());
+  out_img->write((out_name+".fc2obj").c_str());
 
   delete out_img;
 
