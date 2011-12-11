@@ -22,7 +22,7 @@ using namespace std;
 // converts a TomoImage into a TDImage with the x axis bein omega and the y axis being theta
 template <typename T> TDImage<T>* CreateSinogram(TomoImage<T>* in_img)
 {
-  TDImage<T>* out_img = new TDImage<T>(in_img->cols, in_img->cols, in_img->colors, in_img->rows); // depth = rows in each projection, cols = cols in projection, rows = cols in projection
+  TDImage<T>* out_img = new TDImage<T>(in_img->cols, in_img->planes, in_img->colors, in_img->rows); // depth = rows in each projection, cols = cols in projection, rows = planes in projection
 
   FOREACH_PIXEL_TOMO(in_img, column, row, color, slice)
   {
@@ -35,11 +35,11 @@ template <typename T> TDImage<T>* CreateSinogram(TomoImage<T>* in_img)
 // takes in the dft of a sinogram, multiplies by ramp filter (abs(omega)) where omega is shifted to be from neg to pos, not 0 to pos*2
 ComplexTD* DeblurDFT(ComplexTD* in_img)
 {
-  ComplexTD* out_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth); 
+  ComplexTD* out_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
 
   FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
   {
-    out_img->set_pixel(omega, theta, color, depth, (float)abs(omega - in_img->cols/2)*in_img->get_pixel(omega, theta, color, depth)); 
+    out_img->set_pixel(omega, theta, color, depth, (float)abs((int)(omega - in_img->cols/2))*in_img->get_pixel(omega, theta, color, depth));
   }
 
   return out_img;
@@ -107,7 +107,7 @@ ComplexTD* resample(ComplexTD *wtSpace) {
     int u1 = (int)(u + 0.5);
     int v1 = (int)(v + 0.5);
 
-    uvSpace->set_pixel(u1, v1, color, depth, 
+    uvSpace->set_pixel(u1, v1, color, depth,
                                   wtSpace->get_pixel(column, row, color, depth));
   }
 
