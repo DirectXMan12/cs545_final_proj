@@ -21,9 +21,7 @@
 inline float checkerboard(int x, int y)
 {
   if ( (x + y) % 2 == 0) return 1.0f;
-  else if (x + y == 0) return 1.0f;
   else return -1.0f;
-  //return 1.0f;
 }
 
 inline std::complex<float> _I()
