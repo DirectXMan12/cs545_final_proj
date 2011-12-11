@@ -4,5 +4,13 @@ h2. Utility Libraries
 
 - TDImage (3d_img.*) := Template class representing an image in 3-dimensional space, has cols, rows, colors, and depth
 - TomoImage (tomo_img.*) := Template class representing a series of Tomographical projections, has cols, rows, colors, and positions (planes)
+- dft.h := dft-related functionality
+- img_iters.h := @/FOREACH_PIXEL(.*)/@ macros for iterating over the pixels in different types of images
+- err_macros.h := contains the POST_ERR, POST_WARN, and POST_INFO macros, which take partial stream code as arguements (e.g. @POST_ERR("there was a problem at pixel" << pixel_num)@)
 
-both libraries compile without errors, but I have not gotten a chance to try them out, so let me know if you get any errors -- Solly
+h2. Status of Main Code
+
+* everything compiles
+* not yet actually tested
+* currently outputs quasi-final 3DImage (WPI img format stacked on top of each other, pretty much)
+

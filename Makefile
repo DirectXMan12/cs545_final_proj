@@ -3,12 +3,12 @@
 
 EXE = tomorec
 CC = g++
-CFLAGS = -g
+CFLAGS = -g -std=c++0x
 CPP_FILES = main.cpp
-H_FILES = 3d_img.h err_macros.h tomo_img.h
+LIB = -lm
 
 all: $(CPP_FILES) $(H_FILES)
-	$(CC) $(CPP_FILES) $(H_FILES) $(CFLAGS) -o $(EXE)
+	$(CC) $(CPP_FILES) -I . $(CFLAGS) $(LIB) -o $(EXE) -Wall
 
 clean:
 	rm -f $(EXE)
