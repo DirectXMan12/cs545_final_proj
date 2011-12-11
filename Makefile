@@ -1,14 +1,23 @@
 # Makefile for tomographic reconstruction project
-# Version: December 6, 2011
+# Version: December 11, 2011
 
-EXE = tomorec
+EXE_TOMO = tomorec
+EXE_TD = 3d_2_tif
 CC = g++
 CFLAGS = -g -std=c++0x
-CPP_FILES = main.cpp
+CPP_FILES_TOMO = main.cpp
+CPP_FILES_TD = 3d_2_tif.cpp
 LIB = -lm
 
-all: $(CPP_FILES) $(H_FILES)
-	$(CC) $(CPP_FILES) -I . $(CFLAGS) $(LIB) -o $(EXE) -Wall
+all:
+	make tomorec
+	make 3d_2_tif
+
+tomorec: $(CPP_FILES_TOMO) $(H_FILES)
+	$(CC) $(CPP_FILES_TOMO) -I . $(CFLAGS) $(LIB) -o $(EXE_TOMO) -Wall
+
+3d_2_tif: $(CPP_FILES_TD)
+	$(CC) $(CPP_FILES_TD) $(CFLAGS) -o $(EXE_TD)
 
 clean:
-	rm -f $(EXE)
+	rm -f $(EXE_TOMO) $(EXE_TD)
