@@ -8,6 +8,7 @@
  */
 #include <iostream>
 #include <math.h>
+#include <complex>
 
 #include "3d_img.h" // most of the data will be worked with in this format -- represents a series of stacked up images -- TDImage<T>
 #include "tomo_img.h" // represents the data before any backprojection -- in angles -- TomoImage<T>
@@ -36,9 +37,9 @@ ComplexTD* DeblurDFT(ComplexTD* in_img)
 {
   ComplexTD* out_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth); 
 
-  FOREACH_PIXEL_3D(omega, theta, color, depth)
+  FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
   {
-    out_img->set_pixel(omega, theta, color, depth, abs(omega - in_img->cols/2)*in_img->get_pixel(omega, theta, color, depth)); 
+    out_img->set_pixel(omega, theta, color, depth, (float)abs(omega - in_img->cols/2)*in_img->get_pixel(omega, theta, color, depth)); 
   }
 
   return out_img;
@@ -46,7 +47,7 @@ ComplexTD* DeblurDFT(ComplexTD* in_img)
 
 // Resample an image from (w, t) space to (u, v) space
 // i.e. transform from polar to Cartesian
-ComplexTD *resample(ComplexTD *wtSpace);
+ComplexTD* resample(ComplexTD *wtSpace);
 
 // Data currently in range [0, 80]
 // Can use this later to scale to [0, 255]
@@ -71,9 +72,9 @@ int main(int argc, char* argv[])
   ComplexTD* tmpc_img;
 
   CHAIN_OP(CreateSinogram(in_img));
-  CHAIN_OPC(dft_1d_img(out_img));
-  CHAIN_OPC(DeblurDFT(c_img));
-  CHAIN_OPC(resample(c_img));
+  CHAIN_OPF(dft_1d_img(out_img));
+  CHAIN_OPF(DeblurDFT(c_img));
+  CHAIN_OPF(resample(c_img));
   CHAIN_OP(inv_dft_img(c_img));
   
   delete in_img;
@@ -109,6 +110,8 @@ ComplexTD* resample(ComplexTD *wtSpace) {
     uvSpace->set_pixel(u1, v1, color, depth, 
                                   wtSpace->get_pixel(column, row, color, depth));
   }
+
+  return uvSpace;
 }
 
 /**
