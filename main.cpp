@@ -14,6 +14,7 @@
 #include "tomo_img.h" // represents the data before any backprojection -- in angles -- TomoImage<T>
 #include "dft.h" // contains DFT and IDFT functions, as well as some helper functions
 #include "img_iters.h" // contains the image pixel iterator helpers -- FOREACH_PIXEL(img, column, row, color), FOREACH_PIXEL_3D(img, column, row, color, depth), FOREACH_PIXEL_IN_COLOR(img, column, row), FOREACH_PIXEL_TOMO(img, column, row, color, slice_num)
+#include "morphology.h" // has morphological image processing operations dialate and erode
 
 #include "err_macros.h" // contains the error macros -- POST_ERR(stream), POST_WARN(stream), and POST_INFO(stream)
 
@@ -71,11 +72,19 @@ int main(int argc, char* argv[])
   ComplexTD* c_img = new ComplexTD(1,1,1,1);
   ComplexTD* tmpc_img;
 
+  // Part 1 -- get a 3D grid of pixels
   CHAIN_OP(CreateSinogram(in_img));
   CHAIN_OPF(dft_1d_img(out_img));
   CHAIN_OPF(DeblurDFT(c_img));
   CHAIN_OPF(resample(c_img));
   CHAIN_OP(inv_dft_img(c_img));
+  
+  // Part 2 -- prepare for output to obj file
+  // open = erode then dialate
+  TDImage<unsigned char>* pristine_out_img = new TDImage<unsigned char>(out_img);
+  CHAIN_OP(dilate(out_img));
+  CHAIN_OP(erode(out_img));
+  CHAIN_OP(subtract(out_img, pristine_out_img));
   
   delete in_img;
   delete c_img;
