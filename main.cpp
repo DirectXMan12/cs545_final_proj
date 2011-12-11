@@ -11,6 +11,7 @@
 #include "tomo_img.h"
 #include "cimg.h"
 #include <math.h>
+#include "dft.h"
 
 #include "err_macros.h"
 
@@ -39,6 +40,7 @@ int main(int argc, char* argv[]) {
   long M = data->cols, N = data->rows;
 
   TomoImage<char> *slice = new TomoImage<char>(M, P, C, 1, data->image_type);
+  
   slice->n_dims = 2;
 
   for(int clr=0; clr<C; clr++) {
