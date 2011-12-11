@@ -50,6 +50,28 @@ template <typename T> ComplexTD* dft_img(TDImage<T>* in_img)
   return complex_img;
 }
 
+inline complex<float> dft_1d_kernel(float s, float omega, float M)
+{
+  return exp(complexf(0,-1.0) * 2.0f * PI * (omega/M)*s);
+}
+
+template <typename T> ComplexTD* dft_1d_img(TDImage<T>* in_img)
+{
+  ComplexTD* complex_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
+  {
+    complex<float> res = _I(0.0);
+    for (int s = 0; s < in_img->cols; s++) // just FT over s, not theta for now
+    {
+      res += dft_1d_kernel(s, omega, in_img->cols)*((float)(in_img->get_pixel(s, omega, color, depth))*checkerboard(s,theta));
+    }
+    complex_img->set_pixel(omega, theta, color, depth, res);
+  }
+
+  return complex_img;
+}
+
 template <typename T> TDImage<T>* inv_dft_img(ComplexTD* in_img)
 {
 
