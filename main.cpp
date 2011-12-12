@@ -77,12 +77,12 @@ int main(int argc, char* argv[])
   // Part 1 -- get a 3D grid of pixels
   CHAIN_OP(CreateSinogram(in_img));
   CHAIN_OPF(dft_1d_img(out_img));
-  CHAIN_OPF(DeblurDFT(c_img));
+  //CHAIN_OPF(DeblurDFT(c_img));
   CHAIN_OPF(resample(c_img));
   CHAIN_OP(inv_dft_img(c_img));
   
   out_img->write(out_name.c_str());
-
+/*
   // Part 2 -- prepare for output to obj file
   // open = erode then dialate
   TDImage<unsigned char>* pristine_out_img = new TDImage<unsigned char>(out_img);
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   delete c_img;
 
   out_img->write((out_name+".fc2obj").c_str());
-
+*/
   delete out_img;
 
   return 0;
@@ -112,15 +112,20 @@ ComplexTD* resample(ComplexTD *wtSpace) {
 
   FOREACH_PIXEL_3D(wtSpace, column, row, color, depth)
   {
-	  double u = (double)column * cos((double)row * 3.0 * M_PI / 180.0);
+    double u = (double)column * cos((double)row * 3.0 * M_PI / 180.0);
     double v = (double)column * sin((double)row * 3.0 * M_PI / 180.0);
 
     // For now, use nearest neighbor
     int u1 = (int)(u + 0.5);
     int v1 = (int)(v + 0.5);
 
+    if(u1 >= cols) u1 = cols-1;
+    if(u1 < 0) u1 = 0;
+    if(v1 >= rows) v1 = rows-1;
+    if(v1 < 0) v1 = 0;
+
     uvSpace->set_pixel(u1, v1, color, depth,
-                                  wtSpace->get_pixel(column, row, color, depth));
+      wtSpace->get_pixel(column, row, color, depth));
   }
 
   return uvSpace;
