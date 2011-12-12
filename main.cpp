@@ -51,7 +51,7 @@ ComplexTD* DeblurDFT(ComplexTD* in_img)
 
   FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
   {
-    out_img->set_pixel(omega, theta, color, depth, (float)abs((int)(omega - in_img->cols/2))*in_img->get_pixel(omega, theta, color, depth));
+    out_img->set_pixel(omega, theta, color, depth, (float)omega/(float)in_img->cols*in_img->get_pixel(omega, theta, color, depth));
   }
 
   return out_img;
@@ -63,16 +63,31 @@ template <typename T> TDImage<T>* backproject(TDImage<T>* in_img)
 
   FOREACH_PIXEL_3D(out_img, column, row, color, depth)
   {
-    float val = 0.0f;
+    complexf val = _I(0.0f);
     for (int theta = 0; theta < in_img->rows; theta++)
     {
       float angle = theta*3.0f;
       float s = column*sin(angle/180.0f * M_PI) + row*cos(angle/180.0f * M_PI);
       val += in_img->get_pixel((int)s, theta, color, depth);
     }
-    val /= (float)in_img->rows; // max theta vals
+    //val /= (float)in_img->rows; // max theta vals
 
     out_img->set_pixel(column, row, color, depth, (T)val);
+  }
+
+  return out_img;
+}
+
+TDImage<unsigned char>* lim_range(TDImage<unsigned char>* in_img, int plus)
+{
+  TDImage<unsigned char>* out_img = new TDImage<unsigned char>(in_img->cols, in_img->rows, in_img->colors, plus);
+
+  for (int depth = 0; depth < plus; depth++)
+  {
+    FOREACH_PIXEL(in_img, column, row, color)
+    {
+      out_img->set_pixel(column, row, color, depth, in_img->get_pixel(column, row, color, 40 + depth));
+    }
   }
 
   return out_img;
@@ -105,11 +120,20 @@ int main(int argc, char* argv[])
   ComplexTD* tmpc_img;
 
   // Part 1 -- get a 3D grid of pixels
-  CHAIN_OP(CreateSinogram(in_img));
-  CHAIN_OPF(dft_1d_img(out_img));
-  //CHAIN_OPF(DeblurDFT(c_img));
-  //CHAIN_OP(idft_1d_img(c_img));
-  CHAIN_OP(backproject(out_img));
+  POST_INFO("Creating Sinograms...");
+    CHAIN_OP(CreateSinogram(in_img));
+    //CHAIN_OP(lim_range(out_img, 10));
+  POST_INFO("1D DFT...");
+    CHAIN_OPF(dft_1d_img(out_img));
+  POST_INFO("Deblur...");
+    CHAIN_OPF(DeblurDFT(c_img));
+  POST_INFO("Backproject...");
+    CHAIN_OPF(backproject(c_img));
+  //POST_INFO("1D IDFT...");
+  //  CHAIN_OP(inv_dft_1d_img(c_img));
+  POST_INFO("2D IDFT");
+      CHAIN_OP(inv_dft_img(c_img));
+  POST_INFO("Done!");
   
   out_img->write(out_name.c_str());
 /*
