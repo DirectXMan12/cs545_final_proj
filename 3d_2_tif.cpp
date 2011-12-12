@@ -295,11 +295,11 @@ wpi_image *read_wpi_image(char *file_name)
 		exit(-1);
 		} /* end if(colors) */
 
-	if (image_type != 'c') {
-	  fprintf(stderr, "%s: image type %c not supported - must be type c\n",
-		  prog, image_type);
-	  exit(-1);
-	}
+//	if (image_type != 'c') {
+//	  fprintf(stderr, "%s: image type %c not supported - must be type c\n",
+//		  prog, image_type);
+//	  exit(-1);
+//	}
 
 	if ((the_image = create_wpi_image(cols,rows,planes,colors,image_type)) == NULL)
 		{

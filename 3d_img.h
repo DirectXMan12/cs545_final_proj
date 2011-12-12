@@ -124,10 +124,10 @@ template <typename T> void TDImage<T>::write(const char* filename)
   header[3] = this->cols & 255;
   header[4] = (this->rows >> 8) & 255;
   header[5] = this->rows & 255;
-  header[6] = (this->colors >> 8) & 255;
-  header[7] = this->colors & 255;
-  header[8] = (this->depth >> 8) & 255;
-  header[9] = this->depth & 255;
+  header[6] = (this->depth >> 8) & 255;
+  header[7] = this->depth & 255;
+  header[8] = (this->colors >> 8) & 255;
+  header[9] = this->colors & 255;
 
   fp.write((char*)(&header), sizeof(header));
   // check for errors?
