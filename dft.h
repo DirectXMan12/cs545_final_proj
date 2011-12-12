@@ -66,6 +66,11 @@ inline std::complex<float> dft_1d_kernel(float s, float omega, float M)
   return exp(complexf(0,-1.0) * 2.0f * (float)M_PI * (omega/M)*s);
 }
 
+inline std::complex<float> idft_1d_kernel(float s, float omega, float M)
+{
+  return exp(complexf(0,1.0) * 2.0f * (float)M_PI * (omega/M)*s);
+}
+
 template <typename T> ComplexTD* dft_1d_img(TDImage<T>* in_img)
 {
   ComplexTD* complex_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
@@ -75,13 +80,52 @@ template <typename T> ComplexTD* dft_1d_img(TDImage<T>* in_img)
     std::complex<float> res = _I(0.0);
     for (int s = 0; s < in_img->cols; s++) // just FT over s, not theta for now
     {
-      res += dft_1d_kernel(s, omega, in_img->cols)*((float)(in_img->get_pixel(s, omega, color, depth))*checkerboard(s,theta));
+      res += dft_1d_kernel(s, omega, in_img->cols)*((float)(in_img->get_pixel(s, theta, color, depth))*checkerboard(s,theta));
     }
     complex_img->set_pixel(omega, theta, color, depth, res);
   }
 
   return complex_img;
 }
+
+TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
+{
+
+  ComplexTD* tmp_img = new ComplexTD(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+  TDImage<float>* tmp2_img = new TDImage<float>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  // Columns
+  FOREACH_PIXEL_3D(in_img, column, row, color, depth) {
+    std::complex<float> res = _I(0.0);
+    for(int s=0; s<in_img->cols; s++) {
+      res += (idft_1d_kernel(s, column, in_img->cols)*(in_img->get_pixel(s, row, color, depth)));
+    }
+    tmp_img->set_pixel(column, row, color, depth, res);
+  }
+
+  // Rows
+  FOREACH_PIXEL_3D(in_img, column, row, color, depth) {
+    float res = 0.0;
+    for(int s=0; s<in_img->rows; s++) {
+      res += (idft_1d_kernel(s, row, in_img->rows)*(tmp_img->get_pixel(column, s, color, depth))).real();
+    }
+    tmp2_img->set_pixel(column, row, color, depth, checkerboard(column, row)*res/((float)in_img->rows*(float)in_img->cols));
+  }
+
+  // We had floats...we want not floats
+  TDImage<unsigned char>* out_img = new TDImage<unsigned char>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  FOREACH_PIXEL_3D(out_img, column, row, color, depth)
+  {
+    out_img->set_pixel(column, row, color, depth, tmp2_img->get_pixel(column, row, color, depth));  
+  }
+
+  delete tmp_img;
+  delete tmp2_img;
+  return out_img;
+}
+
+/*
 
 // for some reason, this refuses to work as a template function
 TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
@@ -109,5 +153,5 @@ TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
   delete tmp_img;
   return out_img;
 }
-
+*/
 #endif
