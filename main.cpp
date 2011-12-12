@@ -20,6 +20,8 @@
 
 using namespace std;
 
+int se_b[9][2] = {{-1,-1},{0,-1},{1,-1}, {-1,0},{0,0},{1,0}, {-1,1},{0,1},{1,1}};
+
 // converts a TomoImage into a TDImage with the x axis bein omega and the y axis being theta
 template <typename T> TDImage<T>* CreateSinogram(TomoImage<T>* in_img)
 {
@@ -84,8 +86,7 @@ int main(int argc, char* argv[])
   // Part 2 -- prepare for output to obj file
   // open = erode then dialate
   TDImage<unsigned char>* pristine_out_img = new TDImage<unsigned char>(out_img);
-  CHAIN_OP(dilate(out_img));
-  CHAIN_OP(erode(out_img));
+  CHAIN_OP(dilate(out_img, se_b, 9));
   CHAIN_OP(subtract(out_img, pristine_out_img));
   
   delete in_img;
