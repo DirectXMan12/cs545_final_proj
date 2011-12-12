@@ -8,6 +8,8 @@ CFLAGS = -g -std=c++0x
 CPP_FILES_TOMO = main.cpp
 CPP_FILES_TD = 3d_2_tif.cpp
 LIB = -lm -lglut -lGLU -lGL
+DATA_OUT = test_data-out.img
+DATA_FOLDER = tifs
 
 all:
 	make tomorec
@@ -21,3 +23,7 @@ tomorec: $(CPP_FILES_TOMO) $(H_FILES)
 
 clean:
 	rm -f $(EXE_TOMO) $(EXE_TD)
+	rm -rf $(DATA_OUT) $(DATA_FOLDER)
+run:
+	./tomorec test_data.dat
+	./3d_2_tif $(DATA_OUT) $(DATA_FOLDER)

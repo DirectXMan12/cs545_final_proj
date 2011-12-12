@@ -93,14 +93,15 @@ TDImage<unsigned char>* inv_dft_1d_img(ComplexTD* in_img)
   TDImage<float>* tmp_img = new TDImage<float>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
   TDImage<unsigned char>* out_img = new TDImage<unsigned char>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
 
-  FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
+  FOREACH_PIXEL_3D(out_img, s, theta, color, depth)
   {
     float res = 0.0;
-    for (int s = 0; s < in_img->cols; s++) // just FT over s, not theta for now
+    for (int omega = 0; omega < in_img->cols; omega++) // just FT over s, not theta for now
     {
-      res += (idft_1d_kernel(s, omega, in_img->cols)*(in_img->get_pixel(s, theta, color, depth))).real();//*checkerboard(s,theta));
+      res += (idft_1d_kernel(s, omega, in_img->cols)*(in_img->get_pixel(omega, theta, color, depth))).real();//*checkerboard(s,theta));
     }
-    out_img->set_pixel(omega, theta, color, depth, res / (float)in_img->cols);
+    tmp_img->set_pixel(s, theta, color, depth, res / (float)in_img->cols);
+    //POST_INFO(tmp_img->get_pixel(s, theta, color, depth));
   }
 
   // We had floats...we want not floats
@@ -134,7 +135,10 @@ TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
     for(int s=0; s<in_img->rows; s++) {
       res += (idft_1d_kernel(s, row, in_img->rows)*(tmp_img->get_pixel(column, s, color, depth))).real();
     }
-    tmp2_img->set_pixel(column, row, color, depth, res/((float)in_img->rows*(float)in_img->cols));
+    tmp2_img->set_pixel(column, row, color, depth, res/((float)in_img->cols)*checkerboard(column, row));
+    POST_INFO(tmp2_img->get_pixel(column, row, color, depth));
+    if (tmp2_img->get_pixel(column, row, color, depth) < 0.0f) POST_ERR("-1.0f");
+    else if (tmp2_img->get_pixel(column, row, color, depth) == 0.0f) POST_ERR("0.0");
   }
 
   // We had floats...we want not floats

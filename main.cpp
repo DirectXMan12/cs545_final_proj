@@ -51,7 +51,7 @@ ComplexTD* DeblurDFT(ComplexTD* in_img)
 
   FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
   {
-    out_img->set_pixel(omega, theta, color, depth, (float)omega/(float)in_img->cols*in_img->get_pixel(omega, theta, color, depth));
+    out_img->set_pixel(omega, theta, color, depth, (abs((float)omega/(float)in_img->cols - 0.5f))*in_img->get_pixel(omega, theta, color, depth));
   }
 
   return out_img;
@@ -63,20 +63,42 @@ template <typename T> TDImage<T>* backproject(TDImage<T>* in_img)
 
   FOREACH_PIXEL_3D(out_img, column, row, color, depth)
   {
-    complexf val = _I(0.0f);
+    float val = 0.0f;
     for (int theta = 0; theta < in_img->rows; theta++)
     {
       float angle = theta*3.0f;
-      float s = column*sin(angle/180.0f * M_PI) + row*cos(angle/180.0f * M_PI);
+      float c = column - out_img->cols/2;
+      float r = row - out_img->rows/2;
+      float s = c*sin(angle/180.0f * M_PI) + r*cos(angle/180.0f * M_PI) + in_img->cols/2;
       val += in_img->get_pixel((int)s, theta, color, depth);
     }
-    //val /= (float)in_img->rows; // max theta vals
-
+    val /= 12; // max theta vals
+    //if(val > 255.0f) POST_ERR(val);
+    //else POST_INFO(val);
     out_img->set_pixel(column, row, color, depth, (T)val);
   }
 
   return out_img;
 }
+
+template <typename T> TDImage<T>* resample(TDImage<T>* in_img)
+{
+  ComplexTD* out_img = new ComplexTD(in_img->cols, in_img->cols, in_img->colors, in_img->depth);
+
+  FOREACH_PIXEL_3D(in_img, u, v, color, depth)
+  {
+    int c = in_img->cols/2;
+    int omega = sqrt((u - c)*(u - c) + (v - c)*(v - c));
+    int theta = 270;
+    if (u - c != 0) theta = (atan((v - c)/(u - c)))*180/(3*M_PI);
+
+
+    out_img->set_pixel(u,v,color,depth, in_img->get_pixel(omega, theta, color, depth));
+  }
+
+  return out_img;
+}
+
 
 TDImage<unsigned char>* lim_range(TDImage<unsigned char>* in_img, int plus)
 {
@@ -86,16 +108,44 @@ TDImage<unsigned char>* lim_range(TDImage<unsigned char>* in_img, int plus)
   {
     FOREACH_PIXEL(in_img, column, row, color)
     {
-      out_img->set_pixel(column, row, color, depth, in_img->get_pixel(column, row, color, 40 + depth));
+      out_img->set_pixel(column, row, color, depth, in_img->get_pixel(column, row, color, 18 + depth));
     }
   }
 
   return out_img;
 }
 
-// Resample an image from (w, t) space to (u, v) space
-// i.e. transform from polar to Cartesian
-ComplexTD* resample(ComplexTD *wtSpace);
+TDImage<unsigned char>* c_to_d(ComplexTD* in_img)
+{
+  TDImage<unsigned char>* out_img = new TDImage<unsigned char>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  FOREACH_PIXEL_3D(in_img, column, row, color, depth)
+  {
+    out_img->set_pixel(column, row, color, depth, abs(in_img->get_pixel(column, row, color, depth)));
+  }
+
+  return out_img;
+}
+
+template <typename T> TDImage<T>* scale_vals(TDImage<T>* in_img, int tmax)
+{
+  TDImage<T>* out_img = new TDImage<T>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  int max = 0;
+  FOREACH_PIXEL_3D(out_img, column, row, color, depth)
+  {
+    int v = in_img->get_pixel(column, row, color, depth);
+    if (v > max) max = v;
+  }
+  float scale_factor = (float)tmax/(float)max;
+
+  FOREACH_PIXEL_3D(out_img, column, row, color, depth)
+  {
+    out_img->set_pixel(column, row, color, depth, (T)(scale_factor*in_img->get_pixel(column, row, color, depth)));
+  }
+
+  return out_img;
+} 
 
 // Data currently in range [0, 80]
 // Can use this later to scale to [0, 255]
@@ -122,17 +172,22 @@ int main(int argc, char* argv[])
   // Part 1 -- get a 3D grid of pixels
   POST_INFO("Creating Sinograms...");
     CHAIN_OP(CreateSinogram(in_img));
-    //CHAIN_OP(lim_range(out_img, 10));
+    out_img->write("test_data-sinograms.img");
+  //  CHAIN_OP(lim_range(out_img, 5));
   POST_INFO("1D DFT...");
     CHAIN_OPF(dft_1d_img(out_img));
   POST_INFO("Deblur...");
     CHAIN_OPF(DeblurDFT(c_img));
-  POST_INFO("Backproject...");
-    CHAIN_OPF(backproject(c_img));
-  //POST_INFO("1D IDFT...");
-  //  CHAIN_OP(inv_dft_1d_img(c_img));
-  POST_INFO("2D IDFT");
-      CHAIN_OP(inv_dft_img(c_img));
+  //POST_INFO("Resample...");
+  //  CHAIN_OPF(resample(c_img));
+  POST_INFO("1D IDFT...");
+    CHAIN_OP(inv_dft_1d_img(c_img));
+  //POST_INFO("2D IDFT");
+  //    CHAIN_OP(inv_dft_img(c_img));
+  POST_INFO("Backproject");
+    CHAIN_OP(backproject(out_img));
+  //POST_INFO("scaling");
+  //  CHAIN_OP(scale_vals(out_img, 255));
   POST_INFO("Done!");
   
   out_img->write(out_name.c_str());
@@ -151,37 +206,6 @@ int main(int argc, char* argv[])
   delete out_img;
 
   return 0;
-}
-
-// For now, use the method of grabbing a pixel from (w,t) space
-// and placing it where it belongs in (u, v) space. This way, we
-// don't have to worry about undefined values and out-of-bounds
-// values.
-// Also use nearest neighbor for now.
-ComplexTD* resample(ComplexTD *wtSpace) {
-  long cols = wtSpace->cols, rows = wtSpace->rows, colors = wtSpace->colors;
-  ComplexTD *uvSpace = new ComplexTD(cols, rows, colors, wtSpace->depth);
-
-
-  FOREACH_PIXEL_3D(wtSpace, column, row, color, depth)
-  {
-    double u = (double)column * cos((double)row * 3.0 * M_PI / 180.0);
-    double v = (double)column * sin((double)row * 3.0 * M_PI / 180.0);
-
-    // For now, use nearest neighbor
-    int u1 = (int)(u + 0.5);
-    int v1 = (int)(v + 0.5);
-
-    if(u1 >= cols) u1 = cols-1;
-    if(u1 < 0) u1 = 0;
-    if(v1 >= rows) v1 = rows-1;
-    if(v1 < 0) v1 = 0;
-
-    uvSpace->set_pixel(u1, v1, color, depth,
-      wtSpace->get_pixel(column, row, color, depth));
-  }
-
-  return uvSpace;
 }
 
 /**
