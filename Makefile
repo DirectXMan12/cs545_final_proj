@@ -7,7 +7,7 @@ CC = g++
 CFLAGS = -g -std=c++0x
 CPP_FILES_TOMO = main.cpp
 CPP_FILES_TD = 3d_2_tif.cpp
-LIB = -lm
+LIB = -lm -lglut -lGLU -lGL
 
 all:
 	make tomorec

@@ -10,6 +10,9 @@
 #include <math.h>
 #include <complex>
 
+#include <stdlib.h>
+#include "GL/glut.h"
+
 #include "3d_img.h" // most of the data will be worked with in this format -- represents a series of stacked up images -- TDImage<T>
 #include "tomo_img.h" // represents the data before any backprojection -- in angles -- TomoImage<T>
 #include "dft.h" // contains DFT and IDFT functions, as well as some helper functions
@@ -21,6 +24,12 @@
 using namespace std;
 
 int se_b[9][2] = {{-1,-1},{0,-1},{1,-1}, {-1,0},{0,0},{1,0}, {-1,1},{0,1},{1,1}};
+struct edgeInfo
+{
+  vector<int[3]> v;
+  vector<int[2]> e;
+};
+struct edgeInfo ve;
 
 // converts a TomoImage into a TDImage with the x axis bein omega and the y axis being theta
 template <typename T> TDImage<T>* CreateSinogram(TomoImage<T>* in_img)
@@ -152,6 +161,86 @@ void findMaxAndMin(long *data, long n, long *max, long *min) {
       (*min) = curr;
     }
   }
+}
+
+struct camera
+{
+  float x,y,z,lx,ly,lz;
+  float angle;
+};
+
+struct camera cam;
+
+void setCam()
+{
+  glLoadIdentity();
+  gluLookAt(cam.x,cam.y,cam.z,cam.lx,cam.ly,cam.lz, 0, 1.0f, 0);
+}
+
+void display()
+{
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glColor3f(1.0,1.0,1.0);
+
+  setCam();
+
+  glBegin(GL_LINES);
+  for(int i = 0; i < ve.e.size(); i++)
+  {
+    int j = ve.e[i][0];
+    int k = ve.e[i][1];
+    glVertex3i(ve.v[j][0], ve.v[j][1], ve.v[k][2]);
+    glVertex3i(ve.v[k][0], ve.v[k][1], ve.v[k][2]);
+  }
+  glEnd();
+  glutSwapBuffers();
+}
+
+void processSpecialKeys(int key, int xx, int yy) 
+{
+  float fraction = 0.1f;
+
+  switch (key)
+  {
+    case GLUT_KEY_LEFT :
+      cam.angle -= 0.01f;
+      cam.lx = sin(cam.angle);
+      cam.lz = -cos(cam.angle);
+      break;
+    case GLUT_KEY_RIGHT :
+      cam.angle += 0.01f;
+      cam.lx = sin(cam.angle);
+      cam.lz = -cos(cam.angle);
+      break;
+    case GLUT_KEY_UP :
+      cam.x += cam.lx * fraction;
+      cam.z += cam.lz * fraction;
+      break;
+    case GLUT_KEY_DOWN :
+      cam.x -= cam.lx * fraction;
+      cam.z -= cam.lz * fraction;
+      break;
+  }
+}
+
+void init3d()
+{
+  glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+  glutInitWindowPosition(100,100);
+  glutInitWindowSize(320,320);
+  glutCreateWindow("Tomo. Wireframe Viewer");
+
+  // register callbacks
+  glutDisplayFunc(display);
+  glutIdleFunc(display);
+  //glutKeyboardFunc(processNormalKeys);
+  glutSpecialFunc(processSpecialKeys);
+
+  // OpenGL init
+  glEnable(GL_DEPTH_TEST);
+
+  // enter GLUT event processing cycle
+  glutMainLoop();
 }
 
 /**
