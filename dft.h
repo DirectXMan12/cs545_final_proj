@@ -80,12 +80,37 @@ template <typename T> ComplexTD* dft_1d_img(TDImage<T>* in_img)
     std::complex<float> res = _I(0.0);
     for (int s = 0; s < in_img->cols; s++) // just FT over s, not theta for now
     {
-      res += dft_1d_kernel(s, omega, in_img->cols)*((float)(in_img->get_pixel(s, theta, color, depth))*checkerboard(s,theta));
+      res += dft_1d_kernel(s, omega, in_img->cols)*((float)(in_img->get_pixel(s, theta, color, depth)));//*checkerboard(s,theta));
     }
     complex_img->set_pixel(omega, theta, color, depth, res);
   }
 
   return complex_img;
+}
+
+TDImage<unsigned char>* inv_dft_1d_img(ComplexTD* in_img)
+{
+  TDImage<float>* tmp_img = new TDImage<float>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+  TDImage<unsigned char>* out_img = new TDImage<unsigned char>(in_img->cols, in_img->rows, in_img->colors, in_img->depth);
+
+  FOREACH_PIXEL_3D(in_img, omega, theta, color, depth)
+  {
+    float res = 0.0;
+    for (int s = 0; s < in_img->cols; s++) // just FT over s, not theta for now
+    {
+      res += (idft_1d_kernel(s, omega, in_img->cols)*(in_img->get_pixel(s, theta, color, depth))).real();//*checkerboard(s,theta));
+    }
+    out_img->set_pixel(omega, theta, color, depth, res / (float)in_img->cols);
+  }
+
+  // We had floats...we want not floats
+  FOREACH_PIXEL_3D(out_img, column, row, color, depth)
+  {
+    out_img->set_pixel(column, row, color, depth, tmp_img->get_pixel(column, row, color, depth));  
+  }
+
+  delete tmp_img;
+  return out_img;
 }
 
 TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
@@ -109,7 +134,7 @@ TDImage<unsigned char>* inv_dft_img(ComplexTD* in_img)
     for(int s=0; s<in_img->rows; s++) {
       res += (idft_1d_kernel(s, row, in_img->rows)*(tmp_img->get_pixel(column, s, color, depth))).real();
     }
-    tmp2_img->set_pixel(column, row, color, depth, checkerboard(column, row)*res/((float)in_img->rows*(float)in_img->cols));
+    tmp2_img->set_pixel(column, row, color, depth, res/((float)in_img->rows*(float)in_img->cols));
   }
 
   // We had floats...we want not floats
